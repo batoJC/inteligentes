@@ -5,14 +5,36 @@
  */
 package expertsystemapp;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Scanner;
+
 /**
  *
  * @author Work
  */
 public class ReaderFile {
-    public static String[] ReaderFile (String filePath){
-        // TODO: read a file from disk and return a string list
+    public static ArrayList<String> ReaderFile (String filePath){
+        Scanner reader = null;
+        ArrayList<String> output = new ArrayList<>();
+        try {
+            File fileObject = new File(filePath);
+            reader = new Scanner(fileObject);
+            while (reader.hasNextLine()) {
+                String data = reader.nextLine().trim();
+                if (!"".equals(data)){
+                    output.add(data);
+                }
+            }
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred."+e.getMessage());
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
         
-        return new String[0];
+        return output;
     }
 }

@@ -11,6 +11,7 @@ import expertsystem.Motor;
 import expertsystem.Rule;
 import expertsystemapp.ReaderFile;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFileChooser;
 
@@ -33,12 +34,14 @@ public class Main extends javax.swing.JFrame implements HumanInterface {
         System.out.println("Run");
         motor = new Motor(this);
         
-        String [] rules = ReaderFile.ReaderFile(filePath);
-        for (String rule : rules) {
+        ArrayList<String> rules = ReaderFile.ReaderFile(filePath);
+        rules.forEach((rule) -> {
             motor.addRule(rule);
-        }
+        });
+        
         
         // TODO: start process
+        
     }
 
     /**
@@ -119,9 +122,7 @@ public class Main extends javax.swing.JFrame implements HumanInterface {
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
-            // Set name of file
-           
-            System.out.println( file.getAbsolutePath());
+           filePath = file.getAbsolutePath();
         } 
     }//GEN-LAST:event_btnSelectFileActionPerformed
 
