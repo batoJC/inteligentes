@@ -10,10 +10,20 @@ import expertsystem.IFact;
 import expertsystem.Motor;
 import expertsystem.Rule;
 import expertsystemapp.ReaderFile;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
 
 /**
  *
@@ -22,26 +32,37 @@ import javax.swing.JFileChooser;
 public class Main extends javax.swing.JFrame implements HumanInterface {
 
     private String filePath = "";
-    private  Motor motor;
+    private Motor motor;
+    public Scanner keyboard = new Scanner(System.in);
+    public String regla;
+    public boolean bandera=true;
+    public Question answer=new Question(this,true);
+
+
     /**
      * Creates new form Main
      */
     public Main() {
         initComponents();
     }
-    
+
     public void run() {
         System.out.println("Run");
         motor = new Motor(this);
-        
+
         ArrayList<String> rules = ReaderFile.ReaderFile(filePath);
         rules.forEach((rule) -> {
             motor.addRule(rule);
         });
-        
-        
+
         // TODO: start process
-        
+        do{
+        txtResponse.setText(txtResponse.getText() + "\n Resolución **");
+        motor.solve();
+        txtResponse.setText(txtResponse.getText() + "\n¿Desea salir? (s/n)");
+        } while (!close("¿Desea salir? (s/n)").equalsIgnoreCase("s"));
+        this.setVisible(false);
+
     }
 
     /**
@@ -79,6 +100,11 @@ public class Main extends javax.swing.JFrame implements HumanInterface {
 
         txtResponse.setColumns(20);
         txtResponse.setRows(5);
+        txtResponse.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                txtResponseKeyPressed(evt);
+            }
+        });
         jScrollPane1.setViewportView(txtResponse);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -116,20 +142,31 @@ public class Main extends javax.swing.JFrame implements HumanInterface {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSelectFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSelectFileActionPerformed
-        
+
         final JFileChooser fc = new JFileChooser();
         int returnVal = fc.showOpenDialog(this);
 
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
-           filePath = file.getAbsolutePath();
-        } 
+            filePath = file.getAbsolutePath();
+        }
     }//GEN-LAST:event_btnSelectFileActionPerformed
 
     private void btnInitMotorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnInitMotorActionPerformed
         txtResponse.setText("Iniciando Motor...");
         this.run();
+        
     }//GEN-LAST:event_btnInitMotorActionPerformed
+
+    private void txtResponseKeyPressed(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_txtResponseKeyPressed
+        if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+            try{
+                this.regla=this.getText();
+            } catch (BadLocationException ex) {
+                Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }//GEN-LAST:event_txtResponseKeyPressed
 
     /**
      * @param args the command line arguments
@@ -174,26 +211,86 @@ public class Main extends javax.swing.JFrame implements HumanInterface {
     private javax.swing.JTextArea txtResponse;
     // End of variables declaration//GEN-END:variables
 
+    
+    
+    public String close(String question){
+        answer.recibeDatos(question);
+        answer.setVisible(true);
+        String mensaje = answer.obtenerTexto();
+        answer.limpiarTexto();
+        return mensaje;
+    }
+        
+    
     @Override
-    public int askIntValue(String string) {
+    public int askIntValue(String question) {
         // TODO: implement a joption for ask a int value
+        System.out.println(question);
+        txtResponse.setText(txtResponse.getText() + "\n" + question);
 
-        return 0;
+        try {
+            answer.recibeDatos(question);
+            answer.setVisible(true);
+            String mensaje = answer.obtenerTexto();
+            answer.limpiarTexto();
+            txtResponse.setText(txtResponse.getText() + "\n" + mensaje);
+            return Integer.parseInt(mensaje);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+
     }
 
     @Override
-    public boolean askBoolValue(String string) {
-        // TODO: implement a joption for ask a if yes or no
-        return false;
+    public boolean askBoolValue(String question) {
+        try {
+            System.out.println(question + " (si, no)");
+            txtResponse.setText(txtResponse.getText() + "\n" + question + " (si, no)");
+            answer.recibeDatos(question+ " (si, no)");
+            answer.setVisible(true);
+            String mensaje = answer.obtenerTexto();
+            answer.limpiarTexto();
+            String res = mensaje;
+            txtResponse.setText(txtResponse.getText() + "\n" + mensaje);
+            return (res.equals("si"));
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 
     @Override
-    public void printFacts(List<IFact> list) {
-        // TODO: print in the txtResponse
+    public void printFacts(List<IFact> facts) {
+        String res = "Solución(s) encontrada(s) : \n";
+        Collections.sort(facts, (IFact f1, IFact f2) -> {
+            return Integer.compare(f2.getLevel(), f1.getLevel());
+        });
+        for (IFact f : facts) {
+            if (f.getLevel() != 0) {
+                res += f.toString() + "\n";
+            }
+        }
+        System.out.println(res);
+        txtResponse.setText(txtResponse.getText() + "\n" + res);
     }
 
     @Override
-    public void printRules(List<Rule> list) {
-        // TODO: print in the txtResponse
+    public void printRules(List<Rule> rules) {
+        String res = "";
+        for (Rule r : rules) {
+            res += r.toString() + "\n";
+        }
+        System.out.println(res);
+        txtResponse.setText(txtResponse.getText() + "\n" + res);
+    }
+
+    private String getText() throws BadLocationException {
+        Document document = txtResponse.getDocument();
+        Element rootElem = document.getDefaultRootElement();
+        int numLines = rootElem.getElementCount();
+        Element lineElem = rootElem.getElement(numLines - 1);
+        int lineStart = lineElem.getStartOffset();
+        int lineEnd = lineElem.getEndOffset();
+        String lineText = document.getText(lineStart, lineEnd - lineStart);
+        return lineText.replace("\n", "");
     }
 }
